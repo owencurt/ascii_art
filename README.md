@@ -1,21 +1,16 @@
 # ASCII Arm Visualizer
 
-A real-time webcam demo that turns your camera feed into monochrome ASCII art while tracking your **left wrist height relative to your left shoulder**.
-Raise your left arm and the ASCII gets denser/more detailed. Lower it and the art becomes coarser.
+A real-time webcam demo that converts your mirrored camera feed into monochrome ASCII art.
 
-The app opens two OpenCV windows:
-1. Mirrored original webcam feed
-2. Live ASCII-rendered output
+This revision is focused on **manual quality tuning**: an OpenCV slider controls ASCII sampling detail, and the output always fills the full ASCII window.
 
 ## Features
 
 - Real-time webcam capture with OpenCV
-- Pose tracking with MediaPipe Pose
-- Smooth, continuous control of ASCII detail using left-arm raise amount
-- Manual slider (OpenCV trackbar) for direct detail control
-- Toggle between arm-based control and manual slider mode
-- Larger, centered ASCII rendering that fills more of the output window
-- Save current ASCII output as both image (`.png`) and text (`.txt`)
+- Monochrome grayscale-to-ASCII rendering
+- Full-window ASCII output that preserves the full webcam composition
+- Slider-only quality control for easy low/medium/high comparison
+- Save current ASCII output as image (`.png`) and text (`.txt`)
 
 ## Project Structure
 
@@ -58,7 +53,7 @@ From the repository root:
 python -m src.ascii_arm_visualizer
 ```
 
-If that import style is inconvenient in your shell, this also works:
+Alternative:
 
 ```bash
 PYTHONPATH=src python -m ascii_arm_visualizer
@@ -68,19 +63,18 @@ PYTHONPATH=src python -m ascii_arm_visualizer
 
 - `q`: quit
 - `m`: toggle mirror mode
-- `c`: toggle control mode (`ARM` / `MANUAL`)
 - `s`: save current ASCII frame as:
   - `outputs/ascii_<timestamp>.png`
   - `outputs/ascii_<timestamp>.txt`
-- **Detail trackbar** (in ASCII window): sets manual detail when in `MANUAL` mode
+- **Detail trackbar** (in ASCII window): only active quality control
 
-## Arm-Control Behavior
+## Quality Behavior
 
-- Control signal: `left_shoulder_y - left_wrist_y`
-- Wrist higher than shoulder => larger signal => denser ASCII
-- Wrist lower => smaller signal => coarser ASCII
-- Signal is clamped, normalized, gamma-shaped, and smoothed with exponential filtering to prevent flicker
-- If landmarks disappear temporarily, detail decays smoothly instead of jumping
+- Slider controls **internal sampling resolution** (`sample_cols/sample_rows`)
+- ASCII display grid remains full-window and stable
+- Low slider values: coarse sampling, chunkier/blockier reconstruction
+- High slider values: finer sampling, more detailed reconstruction
+- On-screen overlay shows current slider value and effective sample/display grids for testing
 
 ## Webcam Permissions / MediaPipe Notes (macOS)
 
@@ -88,13 +82,9 @@ PYTHONPATH=src python -m ascii_arm_visualizer
 - If camera access was denied previously:
   - Open **System Settings → Privacy & Security → Camera**
   - Enable camera access for your terminal app (Terminal, iTerm, VS Code, etc.)
-- MediaPipe wheels are distributed for modern Python/macOS combinations; if installation fails, verify:
-  - Python version compatibility
-  - CPU architecture (Apple Silicon vs Intel)
-  - `pip` is up-to-date
+- MediaPipe remains in dependencies for the project, though gesture control is not active in this revision.
 
 ## Performance Tips
 
-- Good lighting improves pose stability.
-- Keep your upper body in frame, especially left shoulder and left wrist.
-- If framerate drops, reduce webcam resolution in code or lower `max_cols` in `config.py`.
+- Good lighting improves image contrast for clearer ASCII edges.
+- If framerate drops, lower `max_sample_cols` in `config.py`.

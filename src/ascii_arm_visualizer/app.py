@@ -6,20 +6,15 @@ from pathlib import Path
 import cv2
 
 from .ascii_renderer import AsciiFrame, AsciiRenderer
-from .config import AppConfig, AsciiConfig, ControlConfig
-from .control_mapper import DetailController
-from .pose_tracker import PoseTracker
+from .config import AppConfig, AsciiConfig
 
 
 class AsciiArmVisualizerApp:
     def __init__(self) -> None:
         self.app_config = AppConfig()
         self.ascii_renderer = AsciiRenderer(AsciiConfig())
-        self.controller = DetailController(ControlConfig())
-        self.pose_tracker = PoseTracker()
         self.mirror_mode = True
-        self.control_mode = "arm"
-        self.manual_detail = 0.35
+        self.manual_detail = 0.5
         self.last_ascii_frame: AsciiFrame | None = None
 
         Path(self.app_config.output_dir).mkdir(parents=True, exist_ok=True)
@@ -31,7 +26,13 @@ class AsciiArmVisualizerApp:
 
         cv2.namedWindow(self.app_config.window_original, cv2.WINDOW_AUTOSIZE)
         cv2.namedWindow(self.app_config.window_ascii, cv2.WINDOW_AUTOSIZE)
-        cv2.createTrackbar(self.app_config.detail_trackbar, self.app_config.window_ascii, int(self.manual_detail * 100), 100, self._on_slider)
+        cv2.createTrackbar(
+            self.app_config.detail_trackbar,
+            self.app_config.window_ascii,
+            int(self.manual_detail * 100),
+            100,
+            self._on_slider,
+        )
 
         try:
             while True:
@@ -42,13 +43,17 @@ class AsciiArmVisualizerApp:
                 if self.mirror_mode:
                     frame = cv2.flip(frame, 1)
 
-                arm = self.pose_tracker.process(frame)
-                detail = self._effective_detail(arm.raise_amount)
-                ascii_frame = self.ascii_renderer.render(frame, detail)
-
+                ascii_frame = self.ascii_renderer.render(frame, self.manual_detail)
                 view = ascii_frame.image.copy()
-                self._draw_overlay(view, ascii_frame, detail, arm.raise_amount)
-                self.last_ascii_frame = AsciiFrame(image=view, text=ascii_frame.text, cols=ascii_frame.cols, rows=ascii_frame.rows)
+                self._draw_overlay(view, ascii_frame)
+                self.last_ascii_frame = AsciiFrame(
+                    image=view,
+                    text=ascii_frame.text,
+                    display_cols=ascii_frame.display_cols,
+                    display_rows=ascii_frame.display_rows,
+                    sample_cols=ascii_frame.sample_cols,
+                    sample_rows=ascii_frame.sample_rows,
+                )
 
                 cv2.imshow(self.app_config.window_original, frame)
                 cv2.imshow(self.app_config.window_ascii, view)
@@ -58,30 +63,18 @@ class AsciiArmVisualizerApp:
                     break
                 if key == ord("m"):
                     self.mirror_mode = not self.mirror_mode
-                if key == ord("c"):
-                    self.control_mode = "manual" if self.control_mode == "arm" else "arm"
-                if key == ord("s"):
-                    if self.last_ascii_frame is not None:
-                        self._save_ascii_snapshot(self.last_ascii_frame)
+                if key == ord("s") and self.last_ascii_frame is not None:
+                    self._save_ascii_snapshot(self.last_ascii_frame)
         finally:
             cap.release()
-            self.pose_tracker.close()
             cv2.destroyAllWindows()
 
-    def _effective_detail(self, raise_amount: float | None) -> float:
-        if self.control_mode == "manual":
-            return self.manual_detail
-
-        detail = self.controller.update(raise_amount).normalized_detail
-        cv2.setTrackbarPos(self.app_config.detail_trackbar, self.app_config.window_ascii, int(detail * 100))
-        return detail
-
-    def _draw_overlay(self, ascii_image, ascii_frame: AsciiFrame, detail: float, raise_amount: float | None) -> None:
+    def _draw_overlay(self, ascii_image, ascii_frame: AsciiFrame) -> None:
         lines = [
-            f"Mode: {self.control_mode.upper()} (c to toggle)",
-            f"Detail: {detail:.2f}   Grid: {ascii_frame.cols}x{ascii_frame.rows}",
-            f"Pose: {'tracking' if raise_amount is not None else 'lost'}",
-            "q quit   m mirror   s save",
+            f"Detail slider: {int(self.manual_detail * 100)}",
+            f"Sample grid: {ascii_frame.sample_cols}x{ascii_frame.sample_rows}",
+            f"Display grid: {ascii_frame.display_cols}x{ascii_frame.display_rows}",
+            "Controls: q quit   m mirror   s save",
         ]
 
         y = 20

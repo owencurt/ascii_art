@@ -13,23 +13,12 @@ class AppConfig:
 @dataclass(frozen=True)
 class AsciiConfig:
     ascii_chars: str = "@%#*+=-:. "
-    min_cols: int = 20
-    max_cols: int = 180
+    min_sample_cols: int = 24
+    max_sample_cols: int = 220
     char_aspect_ratio: float = 0.5
-    base_text_scale: float = 1.0
-    min_text_scale: float = 0.35
-    max_text_scale: float = 2.2
+    font_scale: float = 0.55
     text_thickness: int = 1
     bg_color: int = 0
     fg_color: int = 255
-    fill_ratio: float = 0.96
-
-
-@dataclass(frozen=True)
-class ControlConfig:
-    deadband: float = 0.04
-    min_raise: float = -0.25
-    max_raise: float = 0.9
-    detail_gamma: float = 1.35
-    smoothing_alpha: float = 0.18
-    fallback_decay: float = 0.97
+    fill_ratio: float = 0.98
+    detail_gamma: float = 1.8
