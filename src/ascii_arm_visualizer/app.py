@@ -15,6 +15,9 @@ class AsciiArmVisualizerApp:
         self.ascii_renderer = AsciiRenderer(AsciiConfig())
         self.mirror_mode = True
         self.manual_detail = 0.5
+        self.enable_contrast = True
+        self.enable_edges = True
+        self.enable_portrait = True
         self.last_ascii_frame: AsciiFrame | None = None
 
         Path(self.app_config.output_dir).mkdir(parents=True, exist_ok=True)
@@ -43,7 +46,13 @@ class AsciiArmVisualizerApp:
                 if self.mirror_mode:
                     frame = cv2.flip(frame, 1)
 
-                ascii_frame = self.ascii_renderer.render(frame, self.manual_detail)
+                ascii_frame = self.ascii_renderer.render(
+                    frame,
+                    self.manual_detail,
+                    enable_contrast=self.enable_contrast,
+                    enable_edges=self.enable_edges,
+                    enable_portrait=self.enable_portrait,
+                )
                 view = ascii_frame.image.copy()
                 self._draw_overlay(view, ascii_frame)
                 self.last_ascii_frame = AsciiFrame(
@@ -65,21 +74,27 @@ class AsciiArmVisualizerApp:
                     self.mirror_mode = not self.mirror_mode
                 if key == ord("s") and self.last_ascii_frame is not None:
                     self._save_ascii_snapshot(self.last_ascii_frame)
+                if key == ord("1"):
+                    self.enable_contrast = not self.enable_contrast
+                if key == ord("2"):
+                    self.enable_edges = not self.enable_edges
+                if key == ord("3"):
+                    self.enable_portrait = not self.enable_portrait
         finally:
             cap.release()
             cv2.destroyAllWindows()
 
     def _draw_overlay(self, ascii_image, ascii_frame: AsciiFrame) -> None:
         lines = [
-            f"Detail slider: {int(self.manual_detail * 100)}",
-            f"Sample grid: {ascii_frame.sample_cols}x{ascii_frame.sample_rows}",
-            f"Display grid: {ascii_frame.display_cols}x{ascii_frame.display_rows}",
-            "Controls: q quit   m mirror   s save",
+            f"Detail: {int(self.manual_detail * 100)}",
+            f"Sampling: {ascii_frame.sample_cols}x{ascii_frame.sample_rows} -> {ascii_frame.display_cols}x{ascii_frame.display_rows}",
+            f"1 contrast:{'on' if self.enable_contrast else 'off'}  2 edges:{'on' if self.enable_edges else 'off'}  3 portrait:{'on' if self.enable_portrait else 'off'}",
+            "q quit   m mirror   s save",
         ]
 
         y = 20
         for line in lines:
-            cv2.putText(ascii_image, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1, cv2.LINE_AA)
+            cv2.putText(ascii_image, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.48, (180, 180, 180), 1, cv2.LINE_AA)
             y += 20
 
     def _on_slider(self, value: int) -> None:

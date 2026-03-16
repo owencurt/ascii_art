@@ -2,14 +2,15 @@
 
 A real-time webcam demo that converts your mirrored camera feed into monochrome ASCII art.
 
-This revision is focused on **manual quality tuning**: an OpenCV slider controls ASCII sampling detail, and the output always fills the full ASCII window.
+This version is focused on portrait readability: it improves local contrast, preserves facial edges better, and keeps full-window ASCII composition while the slider changes internal sampling detail.
 
 ## Features
 
 - Real-time webcam capture with OpenCV
-- Monochrome grayscale-to-ASCII rendering
-- Full-window ASCII output that preserves the full webcam composition
-- Slider-only quality control for easy low/medium/high comparison
+- Full-window monochrome ASCII output representing the full frame
+- Slider-only quality control (no gesture control in active pipeline)
+- Portrait-friendly preprocessing (CLAHE + mild denoise + tone balancing)
+- Optional edge emphasis and portrait emphasis toggles for live tuning
 - Save current ASCII output as image (`.png`) and text (`.txt`)
 
 ## Project Structure
@@ -66,15 +67,18 @@ PYTHONPATH=src python -m ascii_arm_visualizer
 - `s`: save current ASCII frame as:
   - `outputs/ascii_<timestamp>.png`
   - `outputs/ascii_<timestamp>.txt`
-- **Detail trackbar** (in ASCII window): only active quality control
+- **Detail trackbar** (in ASCII window): active quality control
+- `1`: toggle contrast preprocessing
+- `2`: toggle edge emphasis
+- `3`: toggle portrait emphasis
 
 ## Quality Behavior
 
-- Slider controls **internal sampling resolution** (`sample_cols/sample_rows`)
-- ASCII display grid remains full-window and stable
-- Low slider values: coarse sampling, chunkier/blockier reconstruction
-- High slider values: finer sampling, more detailed reconstruction
-- On-screen overlay shows current slider value and effective sample/display grids for testing
+- Output footprint stays full-window and stable.
+- Slider changes **internal sampling** (`sample_cols/sample_rows`) only.
+- Low slider values: coarser/chunkier reconstruction.
+- High slider values: finer facial and boundary detail.
+- On-screen overlay shows current detail plus sampling/display grid values.
 
 ## Webcam Permissions / MediaPipe Notes (macOS)
 
@@ -86,5 +90,6 @@ PYTHONPATH=src python -m ascii_arm_visualizer
 
 ## Performance Tips
 
-- Good lighting improves image contrast for clearer ASCII edges.
+- Keep your face and upper torso in frame for best portrait emphasis.
 - If framerate drops, lower `max_sample_cols` in `config.py`.
+- If edges look too strong, toggle edge emphasis with `2`.
