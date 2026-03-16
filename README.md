@@ -12,8 +12,9 @@ The app opens two OpenCV windows:
 - Real-time webcam capture with OpenCV
 - Pose tracking with MediaPipe Pose
 - Smooth, continuous control of ASCII detail using left-arm raise amount
-- Noise-resistant smoothing and fallback behavior when landmarks are briefly lost
-- Mirror mode toggle for selfie-style interaction
+- Manual slider (OpenCV trackbar) for direct detail control
+- Toggle between arm-based control and manual slider mode
+- Larger, centered ASCII rendering that fills more of the output window
 - Save current ASCII output as both image (`.png`) and text (`.txt`)
 
 ## Project Structure
@@ -67,16 +68,18 @@ PYTHONPATH=src python -m ascii_arm_visualizer
 
 - `q`: quit
 - `m`: toggle mirror mode
+- `c`: toggle control mode (`ARM` / `MANUAL`)
 - `s`: save current ASCII frame as:
   - `outputs/ascii_<timestamp>.png`
   - `outputs/ascii_<timestamp>.txt`
+- **Detail trackbar** (in ASCII window): sets manual detail when in `MANUAL` mode
 
 ## Arm-Control Behavior
 
 - Control signal: `left_shoulder_y - left_wrist_y`
 - Wrist higher than shoulder => larger signal => denser ASCII
 - Wrist lower => smaller signal => coarser ASCII
-- Signal is clamped, normalized, and smoothed with exponential filtering to prevent flicker
+- Signal is clamped, normalized, gamma-shaped, and smoothed with exponential filtering to prevent flicker
 - If landmarks disappear temporarily, detail decays smoothly instead of jumping
 
 ## Webcam Permissions / MediaPipe Notes (macOS)

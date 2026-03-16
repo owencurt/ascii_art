@@ -23,6 +23,7 @@ class DetailController:
             return DetailState(normalized_detail=self._smoothed)
 
         normalized = self._normalize_raise(raise_amount)
+        normalized = normalized**self.config.detail_gamma
         self._smoothed = (1.0 - self.config.smoothing_alpha) * self._smoothed + self.config.smoothing_alpha * normalized
         self._smoothed = self._clamp(self._smoothed, 0.0, 1.0)
         return DetailState(normalized_detail=self._smoothed)
